@@ -1,6 +1,5 @@
 import ballerina/config;
 import ballerina/http;
-import ballerina/io;
 import ballerina/oauth2;
 import ballerina/websub;
 import ballerinax/github.webhook;
