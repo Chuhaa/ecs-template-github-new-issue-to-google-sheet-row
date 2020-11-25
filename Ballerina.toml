@@ -6,3 +6,5 @@ version= "0.1.0"
 observability-included=true
 
 [dependencies]
+"ballerinax/github.webhook" = { path = "/home/chuhaashanan/.ballerina/balo_cache/ballerinax/github.webhook/0.9.2/github.webhook-2020r2-any-0.9.2.balo", version = "0.9.2"}
+"ballerinax/googleapis.sheets4" = "0.99.0"
