@@ -30,7 +30,7 @@ sheets4:Client spreadsheetClient = new (spreadsheetConfig);
 @websub:SubscriberServiceConfig {
     path: "/payload",
     subscribeOnStartUp: true,
-    target: [webhook:HUB, "https://github.com/"+config:getAsString("GH_USERNAME")+"/"+config:getAsString("GH_REPO_NAME")+"/events/*.json"],
+    target: [webhook:HUB, "https://github.com/" + config:getAsString("GH_USERNAME") + "/" + config:getAsString("GH_REPO_NAME") + "/events/*.json"],
     hubClientConfig: {
         auth: {
             authHandler: githubOAuth2Handler
@@ -40,7 +40,6 @@ sheets4:Client spreadsheetClient = new (spreadsheetConfig);
 }
 service githubWebhookSubscriber on githubWebhookListener {
     resource function onIssuesOpened(websub:Notification notification, webhook:IssuesEvent event) {
-        io:println("[onIssuesOpened] Issue ID: ", event.issue.number);
         (string|int)[] values = [event.issue.number, event.issue.title, event.issue.user.login, event.issue.created_at];
         sheets4:Spreadsheet|error spreadsheet = spreadsheetClient->openSpreadsheetById(config:getAsString("SPREADSHEET_ID"));
         if (spreadsheet is sheets4:Spreadsheet) {
