@@ -2,17 +2,23 @@ import ballerina/config;
 import ballerina/http;
 import ballerina/oauth2;
 import ballerina/websub;
-import ballerinax/github.webhook;
-import ballerinax/googleapis.sheets4;
+import ballerinax/github.webhook as webhook;
+import ballerinax/googleapis_sheets as sheets;
 
 oauth2:OutboundOAuth2Provider githubOAuth2Provider = new ({
-    accessToken: config:getAsString("GH_ACCESS_TOKEN")
+    accessToken: config:getAsString("GH_ACCESS_TOKEN"),
+    refreshConfig: {
+        clientId: config:getAsString("GH_CLIENT_ID"),
+        clientSecret: config:getAsString("GH_CLIENT_SECRET"),
+        refreshUrl: config:getAsString("GH_REFRESH_URL"),
+        refreshToken: config:getAsString("GH_REFRESH_TOKEN")
+    }
 });
 http:BearerAuthHandler githubOAuth2Handler = new (githubOAuth2Provider);
 
 listener webhook:Listener githubWebhookListener = new (4567);
 
-sheets4:SpreadsheetConfiguration spreadsheetConfig = {
+sheets:SpreadsheetConfiguration spreadsheetConfig = {
     oauth2Config: {
         accessToken: config:getAsString("ACCESS_TOKEN"),
         refreshConfig: {
@@ -24,10 +30,9 @@ sheets4:SpreadsheetConfiguration spreadsheetConfig = {
     }
 };
 
-sheets4:Client spreadsheetClient = new (spreadsheetConfig);
+sheets:Client spreadsheetClient = new (spreadsheetConfig);
 
 @websub:SubscriberServiceConfig {
-    path: "/payload",
     subscribeOnStartUp: true,
     target: [webhook:HUB, "https://github.com/" + config:getAsString("GH_USERNAME") + "/" + config:getAsString("GH_REPO_NAME") + "/events/*.json"],
     hubClientConfig: {
@@ -37,13 +42,13 @@ sheets4:Client spreadsheetClient = new (spreadsheetConfig);
     },
     callback: config:getAsString("CALLBACK_URL")
 }
-service githubWebhookSubscriber on githubWebhookListener {
-    resource function onIssuesOpened(websub:Notification notification, webhook:IssuesEvent event) {
+service websub:SubscriberService /payload on githubWebhookListener {
+    remote function onIssuesOpened(websub:Notification notification, webhook:IssuesEvent event) {
         (string|int)[] values = [event.issue.number, event.issue.title, event.issue.user.login, event.issue.created_at];
-        sheets4:Spreadsheet|error spreadsheet = spreadsheetClient->openSpreadsheetById(config:getAsString("SPREADSHEET_ID"));
-        if (spreadsheet is sheets4:Spreadsheet) {
-            sheets4:Sheet|error sheet = spreadsheet.getSheetByName(config:getAsString("SHEET_NAME"));
-            if (sheet is sheets4:Sheet) {
+        sheets:Spreadsheet|error spreadsheet = spreadsheetClient->openSpreadsheetById(config:getAsString("SPREADSHEET_ID"));
+        if (spreadsheet is sheets:Spreadsheet) {
+            sheets:Sheet|error sheet = spreadsheet.getSheetByName(config:getAsString("SHEET_NAME"));
+            if (sheet is sheets:Sheet) {
                 error? appendResult = sheet->appendRow(values);            
             }
         }
